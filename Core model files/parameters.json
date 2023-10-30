@@ -6,6 +6,7 @@
     "lambda_2" : ,
     "dropout" : 0.1, 
     "dim_feedforward" : ,
+    "nb_layers_dec" : ,
     
 
 }
