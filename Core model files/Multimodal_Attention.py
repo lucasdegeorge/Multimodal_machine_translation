@@ -3,20 +3,29 @@ import torch.nn as nn
 import torch
 import math
 import torch.nn.functional as F
+import json
 
+<<<<<<< HEAD
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+=======
+with open("parameters.json", 'r') as f:
+    parameters = json.load(f)
+    device = parameters["device"]   
+>>>>>>> main
 
 
-class MultiModalAttention(nn.Module):
-    def __init__(self, d_model, n_heads, dropout, lambda1=1, lambda2=1):
+class MultimodalAttention(nn.Module):
+    def __init__(self):
         super().__init__()
 
-        self.d_model = d_model
-        self.d_k = d_model // n_heads
-        self.h = n_heads
+        d_model = parameters["d_model"]
 
-        self.lambda1 = lambda1
-        self.lambda2 = lambda2
+        self.d_model = d_model
+        self.d_k = d_model // parameters["n_heads"]
+        self.h = parameters["n_heads"]
+
+        self.lambda1 = parameters["lambda1"]
+        self.lambda2 = parameters["lambda2"]
 
         self.q_linear = nn.Linear(d_model, d_model)
         # For text (indice e)
@@ -29,7 +38,11 @@ class MultiModalAttention(nn.Module):
         self.v_ei_linear = nn.Linear(d_model, d_model)
         self.k_ei_linear = nn.Linear(d_model, d_model)
 
+<<<<<<< HEAD
         self.dropout = nn.Dropout(dropout)
+=======
+        self.dropout = nn.Dropout(parameters["dropout"]) 
+>>>>>>> main
         self.out = nn.Linear(d_model, d_model)
 
     def forward(
@@ -97,6 +110,12 @@ class MultiModalAttention(nn.Module):
 
         concat = scores.transpose(1, 2).contiguous().view(-1, bs, self.d_model)
         output = self.out(concat)
+<<<<<<< HEAD
+=======
+        
+        return output, attn_weights_e, attn_weights_i 
+    
+>>>>>>> main
 
         return (
             output,

@@ -1,0 +1,12 @@
+{
+    "device" : "cuda",
+    "d_model" : ,
+    "n_heads" : ,
+    "lambda_1" : ,
+    "lambda_2" : ,
+    "dropout" : 0.1, 
+    "dim_feedforward" : ,
+    "nb_layers_dec" : ,
+    
+
+}
