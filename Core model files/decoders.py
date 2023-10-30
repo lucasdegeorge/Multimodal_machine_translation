@@ -119,8 +119,8 @@ class Multimodal_DecoderLayer(
         x,
         e_output,
         i_output,
-        tgt_mask,
-        tgt_key_padding_mask,
+        tgt_mask,  # tgt attention mask
+        tgt_key_padding_mask,  # tgt_padding mask do we need a tgt_padding mask?
         e_key_padding_mask,
         ei_key_padding_mask,
     ):
@@ -129,7 +129,7 @@ class Multimodal_DecoderLayer(
             x: the target, "the output that we want to predict" offset by one position?
             e_output: the output of the encoder
             i_output: the output of the image encoder (ResNet50)
-            tgt_mask: the mask for the target to avoid the model to look at the future (next words)
+            tgt_mask: the mask for the target to avoid the model to look at the future (next words) attention mask
             tgt_key_padding_mask: the mask for the target so that attention does not look at the padding. We used padding to make sure all inputs have the same sequence lengths during batching.
             e_key_padding_mask: the mask for the encoder so that attention does not look at the padding. Same reason.
             ei_key_padding_mask: ei is the concatenation of then encoded image and the encoded text. The encoded text was padded during batching so we need to mask the padding.

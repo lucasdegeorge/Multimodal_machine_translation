@@ -40,7 +40,7 @@ class PositionalEncoder(nn.Module):  # fully modified compared to the UMMT repo 
         return x
 
 
-class Encoder(nn.Module):
+class EncoderLayer(nn.Module):
     """
     inputs (in the paramaters.json file)):
         d_model: dimension of the model
@@ -71,3 +71,39 @@ class Encoder(nn.Module):
             nn.Dropout(dropout),
             nn.Linear(dim_feedforward, d_model),
         )
+
+        def forward(self, x, e_mask):
+            """
+            x is the input of the encoder layer the sentence embedding
+            e_mask is the padding mask of the encoder (i think)
+            """
+            x_1 = self.norm_1(x)
+            x = x + self.dropout_1(self.attn(x_1, x_1, x_1, mask=e_mask))
+            x_2 = self.norm_2(x)
+            x = x + self.dropout_2(self.ffn(x_2))
+
+            return x
+
+
+class Encoder(nn.module):
+    """
+    inputs (json file):
+        nb_layers_dec: number of decoder layers
+
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.layers = nn.ModuleList(
+            [EncoderLayer() for i in range(parameters["nb_layers_dec"])]
+        )
+        self.norm = nn.LayerNorm(parameters["d_model"])
+
+    def forward(self, x, e_mask):
+        """
+        loops over the Encoder layers
+        """
+        for i in range(parameters["nb_layers_dec"]):
+            x = self.layers[i](x, e_mask)
+        x = self.norm(x)
+        return x

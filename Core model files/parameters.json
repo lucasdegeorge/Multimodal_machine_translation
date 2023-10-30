@@ -8,6 +8,8 @@
     "dim_feedforward" : ,
     "nb_layers_dec" : ,
     "seq_len" : ,
+    "n_token":,
+    "image_size" : ,
     
 
 }
