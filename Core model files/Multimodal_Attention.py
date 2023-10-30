@@ -10,7 +10,7 @@ with open("parameters.json", 'r') as f:
     device = parameters["device"]   
 
 
-class MultiModalAttention(nn.Module):
+class MultimodalAttention(nn.Module):
     def __init__(self):
         super().__init__()
 

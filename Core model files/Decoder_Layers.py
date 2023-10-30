@@ -68,7 +68,7 @@ class Multimodal_DecoderLayer(nn.Module):   # we use the multimodal attention la
         self.dropout_3 = nn.Dropout(dropout)
         
         self.attn_1 = nn.MultiheadAttention(d_model, n_heads, dropout, batch_first=True)
-        self.attn_2 = MultiModalAttention()
+        self.attn_2 = MultimodalAttention()
 
         self.ffn = nn.Sequential(nn.Linear(d_model, dim_feedforward),
                 nn.ReLU(),
