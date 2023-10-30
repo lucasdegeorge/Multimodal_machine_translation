@@ -52,8 +52,8 @@ class Encoder(nn.Module):
 
         self.ffn = nn.Sequential(nn.Linear(d_model, dim_feedforward),
                 nn.ReLU(),
-                nn.Linear(dim_feedforward, d_model),
-                nn.Dropout(dropout)
+                nn.Dropout(dropout),
+                nn.Linear(dim_feedforward, d_model)
             )
 
 
