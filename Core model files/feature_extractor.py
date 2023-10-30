@@ -46,12 +46,13 @@ class ImageFolderDataset(data.Dataset):
         crop (int, optional): An optional integer to be given to
             ``torchvision.transforms.CenterCrop``. Default: ``None``.
     """
+
     def __init__(self, root, split, resize=None, crop=None):
         self.split = split
         self.root = Path(root).expanduser().resolve() / self.split
 
         # Image list in dataset order
-        self.index = self.root / 'index.txt'
+        self.index = self.root / "index.txt"
 
         _transforms = []
         if resize is not None:
@@ -60,13 +61,12 @@ class ImageFolderDataset(data.Dataset):
             _transforms.append(transforms.CenterCrop(crop))
         _transforms.append(transforms.ToTensor())
         _transforms.append(
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225]))
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        )
         self.transform = transforms.Compose(_transforms)
 
         if not self.index.exists():
-            raise(RuntimeError(
-                "index.txt does not exist in {}".format(self.root)))
+            raise (RuntimeError("index.txt does not exist in {}".format(self.root)))
 
         self.image_files = []
         with self.index.open() as f:
@@ -76,8 +76,8 @@ class ImageFolderDataset(data.Dataset):
                 self.image_files.append(str(fname))
 
     def read_image(self, fname):
-        with open(fname, 'rb') as f:
-            img = Image.open(f).convert('RGB')
+        with open(fname, "rb") as f:
+            img = Image.open(f).convert("RGB")
             return self.transform(img)
 
     def __getitem__(self, idx):
@@ -103,14 +103,25 @@ def resnet_forward(cnn, x):
     return res4f_relu, avgp
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(prog='extract-cnn-features')
-    parser.add_argument('-f', '--folder', type=str, required=True,
-                        help='Folder to image files i.e. /images/train')
-    parser.add_argument('-b', '--batch-size', type=int, default=256,
-                        help='Batch size for forward pass.')
-    parser.add_argument('-o', '--output', type=str, default='resnet50',
-                        help='Output file prefix. Ex: resnet50')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog="extract-cnn-features")
+    parser.add_argument(
+        "-f",
+        "--folder",
+        type=str,
+        required=True,
+        help="Folder to image files i.e. /images/train",
+    )
+    parser.add_argument(
+        "-b", "--batch-size", type=int, default=256, help="Batch size for forward pass."
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        default="resnet50",
+        help="Output file prefix. Ex: resnet50",
+    )
 
     # Parse arguments
     args = parser.parse_args()
@@ -120,12 +131,11 @@ if __name__ == '__main__':
 
     # Create dataset
     dataset = ImageFolderDataset(root.parent, split, resize=256, crop=224)
-    print('Root folder: {} (split: {}) ({} images)'.format(
-        root, split, len(dataset)))
+    print("Root folder: {} (split: {}) ({} images)".format(root, split, len(dataset)))
 
     loader = data.DataLoader(dataset, batch_size=args.batch_size)
 
-    print('Creating CNN instance.')
+    print("Creating CNN instance.")
     cnn = resnet50(pretrained=True)
 
     # Remove final classifier layer
@@ -136,8 +146,8 @@ if __name__ == '__main__':
     cnn.train(False)
 
     # Create placeholders
-    conv_feats = np.zeros((len(dataset), 1024, 14, 14), dtype='float32')
-    pool_feats = np.zeros((len(dataset), 2048), dtype='float32')
+    conv_feats = np.zeros((len(dataset), 1024, 14, 14), dtype="float32")
+    pool_feats = np.zeros((len(dataset), 2048), dtype="float32")
 
     n_batches = int(np.ceil(len(dataset) / args.batch_size))
 
@@ -147,13 +157,12 @@ if __name__ == '__main__':
         x = Variable(batch, volatile=True).cuda()
         res4f, avgpool = resnet_forward(cnn, x)
 
-        pool_feats[bidx * bs: (bidx + 1) * bs] = avgpool.data.cpu()
-        conv_feats[bidx * bs: (bidx + 1) * bs] = res4f.data.cpu()
+        pool_feats[bidx * bs : (bidx + 1) * bs] = avgpool.data.cpu()
+        conv_feats[bidx * bs : (bidx + 1) * bs] = res4f.data.cpu()
 
-        print('{:3}/{:3} batches completed.'.format(
-            bidx + 1, n_batches), end='\r')
+        print("{:3}/{:3} batches completed.".format(bidx + 1, n_batches), end="\r")
 
     # Save the files
     output = "{}-{}".format(split, args.output)
-    np.save(output + '-avgpool', pool_feats.astype('float16'))
-    np.save(output + '-res4frelu', conv_feats.astype('float16'))
+    np.save(output + "-avgpool", pool_feats.astype("float16"))
+    np.save(output + "-res4frelu", conv_feats.astype("float16"))
