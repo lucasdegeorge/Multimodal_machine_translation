@@ -5,13 +5,9 @@ import math
 import torch.nn.functional as F
 import json
 
-<<<<<<< HEAD
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-=======
-with open("parameters.json", 'r') as f:
+with open("parameters.json", "r") as f:
     parameters = json.load(f)
-    device = parameters["device"]   
->>>>>>> main
+    device = parameters["device"]
 
 
 class MultimodalAttention(nn.Module):
@@ -38,11 +34,7 @@ class MultimodalAttention(nn.Module):
         self.v_ei_linear = nn.Linear(d_model, d_model)
         self.k_ei_linear = nn.Linear(d_model, d_model)
 
-<<<<<<< HEAD
-        self.dropout = nn.Dropout(dropout)
-=======
-        self.dropout = nn.Dropout(parameters["dropout"]) 
->>>>>>> main
+        self.dropout = nn.Dropout(parameters["dropout"])
         self.out = nn.Linear(d_model, d_model)
 
     def forward(
@@ -110,12 +102,8 @@ class MultimodalAttention(nn.Module):
 
         concat = scores.transpose(1, 2).contiguous().view(-1, bs, self.d_model)
         output = self.out(concat)
-<<<<<<< HEAD
-=======
-        
-        return output, attn_weights_e, attn_weights_i 
-    
->>>>>>> main
+
+        return output, attn_weights_e, attn_weights_i
 
         return (
             output,
