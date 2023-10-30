@@ -3,93 +3,53 @@ import torch.nn as nn
 import torch
 from Decoder_Layers import *
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+with open("parameters.json", 'r') as f:
+    parameters = json.load(f)
+    device = parameters["device"]
 
 
 class Decoder(nn.Module):
-    def __init__(self, decoder_layer, num_layers, norm=None):
+    def __init__(self):
         super().__init__()
+        self.layers = nn.ModuleList([DecoderLayer() for i in range(parameters["nb_layers_dec"])])
+        self.norm = nn.LayerNorm(parameters["d_model"])
 
-        self.layers = self.layers = nn.ModuleList([decoder_layer for _ in range(num_layers)])
-        self.num_layers = num_layers
-        self.norm = norm
+    def forward(self, x, e_output, tgt_mask, tgt_key_padding_mask, e_key_padding_mask):
 
-    def forward(self, tgt, memory, tgt_mask=None, e_mask=None, tgt_key_padding_mask=None, e_key_padding_mask=None):
-        output = tgt
-        for i, layer in enumerate(self.layers):
-            output, attn_weights = layer(output, memory, tgt_mask=tgt_mask,
-                                                                memory_mask=memory_mask,
-                                                                tgt_key_padding_mask=tgt_key_padding_mask,
-                                                            memory_key_padding_mask=memory_key_padding_mask,image_bool=image_bool)
-
-            if i == 0:
-                n_heads = attention_weights_e.shape[1]
-                attention_weights_e_sum = attention_weights_e.sum(dim=1)
+        for i in range(parameters["nb_layers_dec"]):
+            x, attn_weights = self.layers[i](x, e_output, tgt_mask, tgt_key_padding_mask, e_key_padding_mask)
             
+            if i==0:    # voir s'il est pas possible de faire quelque chose de plus propre
+                mean_attn_weights = torch.sum(attn_weights, dim=1)
             else:
-                attention_weights_e_sum += attention_weights_e.sum(dim=1)
-            
-        attention_weights_e_sum = attention_weights_e_sum/(self.num_layers*n_heads)
-        if self.norm is not None:
-            output = self.norm(output)
-        return output,attention_weights_e_sum
-        
+                mean_attn_weights += torch.sum(attn_weights, dim=1)
 
-class MultiModal_Decoder(nn.Module):
+        x = self.norm(x)
+        mean_attn_weights /= (parameters["nb_layers_dec"] * parameters["n_heads"])
+
+        return x, mean_attn_weights
     
-    __constants__ = ['norm']
 
-    def __init__(self, decoder_layer, num_layers, norm=None):
+class Multimodal_Decoder(nn.Module):
+    def __init__(self):
         super().__init__()
-        #torch._C._log_api_usage_once(f"torch.nn.modules.{self.__class__.__name__}") je savaias pas à quoi cette ligne servait
-        self.layers = self.layers = nn.ModuleList([decoder_layer for _ in range(num_layers)])
-        self.num_layers = num_layers
-        self.norm = norm
-        
+        self.layers = nn.ModuleList([Multimodal_DecoderLayer() for i in range(parameters["nb_layers_dec"])])
+        self.norm = nn.LayerNorm(parameters["d_model"])
 
-    def forward(self, tgt, memory, tgt_mask = None,
-                memory_mask = None, tgt_key_padding_mask = None,
-                memory_key_padding_mask = None, image_bool=False):
-       
-        output = tgt
-        if image_bool:
-            for i,mod in enumerate(self.layers):
+    def forward(self, x, e_output, i_output, tgt_mask, tgt_key_padding_mask, e_key_padding_mask, ei_key_padding_mask):
 
-                output, attention_weights_e, attention_weights_i = mod(output, memory, tgt_mask=tgt_mask,
-                                                                 memory_mask=memory_mask,
-                                                                 tgt_key_padding_mask=tgt_key_padding_mask,
-                                                                memory_key_padding_mask=memory_key_padding_mask,image_bool=image_bool)
-                
-                output = output,tgt[1]
-                if i == 0:
-                    n_heads = attention_weights_i.shape[1]
-                    attention_weights_e_sum = attention_weights_e.sum(dim=1)
-                    attention_weights_i_sum = attention_weights_i.sum(dim=1)
-                else:
-                    attention_weights_e_sum += attention_weights_e.sum(dim=1)
-                    attention_weights_i_sum += attention_weights_i.sum(dim=1)
-            output  = output[0]
-            attention_weights_e_sum = attention_weights_e_sum/(self.num_layers*n_heads)
-            attention_weights_i_sum = attention_weights_i_sum/(self.num_layers*n_heads)
-            if self.norm is not None:
-                output = self.norm(output)
-            return output,attention_weights_e_sum,attention_weights_i_sum
-        else:
-            for i,mod in enumerate(self.layers):
-        
-                output,attention_weights_e = mod(output, memory, tgt_mask=tgt_mask,
-                                                                 memory_mask=memory_mask,
-                                                                 tgt_key_padding_mask=tgt_key_padding_mask,
-                                                                memory_key_padding_mask=memory_key_padding_mask,image_bool=image_bool)
+        for i in range(parameters["nb_layers_dec"]):
+            x, attn_weights_e, attn_weights_i = self.layers[i](x, e_output, i_output, tgt_mask, tgt_key_padding_mask, e_key_padding_mask, ei_key_padding_mask)
+            
+            if i==0:    # voir s'il est pas possible de faire quelque chose de plus propre
+                mean_attn_weights_e = torch.sum(attn_weights_e, dim=1)
+                mean_attn_weights_i = torch.sum(attn_weights_i, dim=1)
+            else:
+                mean_attn_weights_e += torch.sum(attn_weights_e, dim=1)
+                mean_attn_weights_i += torch.sum(attn_weights_i, dim=1)
 
-                if i == 0:
-                    n_heads = attention_weights_e.shape[1]
-                    attention_weights_e_sum = attention_weights_e.sum(dim=1)
-                
-                else:
-                    attention_weights_e_sum += attention_weights_e.sum(dim=1)
-                
-            attention_weights_e_sum = attention_weights_e_sum/(self.num_layers*n_heads)
-            if self.norm is not None:
-                output = self.norm(output)
-            return output,attention_weights_e_sum
+        x = self.norm(x)
+        mean_attn_weights_e /= (parameters["nb_layers_dec"] * parameters["n_heads"])
+        mean_attn_weights_i /= (parameters["nb_layers_dec"] * parameters["n_heads"])
+
+        return x, mean_attn_weights_e, mean_attn_weights_i
