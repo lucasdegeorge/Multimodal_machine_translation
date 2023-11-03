@@ -72,17 +72,17 @@ class EncoderLayer(nn.Module):
             nn.Linear(dim_feedforward, d_model),
         )
 
-        def forward(self, x, e_mask):
-            """
-            x is the input of the encoder layer the sentence embedding
-            e_mask is the padding mask of the encoder (i think)
-            """
-            x_1 = self.norm_1(x)
-            x = x + self.dropout_1(self.attn(x_1, x_1, x_1, mask=e_mask))
-            x_2 = self.norm_2(x)
-            x = x + self.dropout_2(self.ffn(x_2))
+    def forward(self, x, e_mask):
+        """
+        x is the input of the encoder layer the sentence embedding
+        e_mask is the padding mask of the encoder (i think)
+        """
+        x_1 = self.norm_1(x)
+        x = x + self.dropout_1(self.attn(x_1, x_1, x_1, mask=e_mask))
+        x_2 = self.norm_2(x)
+        x = x + self.dropout_2(self.ffn(x_2))
 
-            return x
+        return x
 
 
 class Encoder(nn.module):
